@@ -10,6 +10,8 @@ import AppLayout from './components/layout/AppLayout';
 import PagePlaceholder from './components/PagePlaceholder';
 import EmployeeList from './pages/employees/EmployeeList';
 import SecuritySettings from './components/SecuritySettings';
+import AuditLogs from './pages/settings/AuditLogs';
+import Roles from './pages/settings/Roles';
 import useUserStore from './store/useUserStore';
 import { useEffect } from 'react';
 
@@ -92,9 +94,10 @@ export default function App() {
 
             {/* Settings Sub-routes */}
             <Route path="settings/users" element={<PagePlaceholder title="User Management" />} />
-            <Route path="settings/roles" element={<PagePlaceholder title="Role Management" />} />
+            <Route path="settings/roles" element={<Roles />} />
             <Route path="settings/permissions" element={<PagePlaceholder title="Permission Setup" />} />
             <Route path="settings/menus" element={<PagePlaceholder title="Menu Configurations" />} />
+            <Route path="settings/audit-logs" element={<AuditLogs />} />
             <Route path="settings/security" element={<SecuritySettings />} />
 
             {/* Any unrecognized sub-route under / redirects to dashboard */}
