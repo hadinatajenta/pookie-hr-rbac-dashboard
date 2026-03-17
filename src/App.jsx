@@ -2,11 +2,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Unauthorized from './pages/Unauthorized';
 import AppLayout from './components/layout/AppLayout';
 import PagePlaceholder from './components/PagePlaceholder';
 import EmployeeList from './pages/employees/EmployeeList';
+import SecuritySettings from './components/SecuritySettings';
 import useUserStore from './store/useUserStore';
 import { useEffect } from 'react';
 
@@ -26,6 +29,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/"
             element={
@@ -90,6 +95,7 @@ export default function App() {
             <Route path="settings/roles" element={<PagePlaceholder title="Role Management" />} />
             <Route path="settings/permissions" element={<PagePlaceholder title="Permission Setup" />} />
             <Route path="settings/menus" element={<PagePlaceholder title="Menu Configurations" />} />
+            <Route path="settings/security" element={<SecuritySettings />} />
 
             {/* Any unrecognized sub-route under / redirects to dashboard */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

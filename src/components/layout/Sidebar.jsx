@@ -116,56 +116,59 @@ export default function Sidebar({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Modals */}
-        {showProfileModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm anim-fade-in">
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-8 w-80 shadow-2xl anim-fade-up relative">
-              <button onClick={() => setShowProfileModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
-                <X size={18} />
-              </button>
-
-              <div className="flex flex-col items-center mb-6">
-                <div className="w-20 h-20 rounded-full bg-indigo-500/10 border-2 border-indigo-500/30 flex items-center justify-center text-3xl font-bold text-indigo-400 uppercase mb-4">
-                  {profile?.first_name?.charAt(0) || <User size={32} />}
-                </div>
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-1">{profile?.first_name} {profile?.last_name}</h3>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 font-mono">@{profile?.username}</p>
-              </div>
-
-              <div className="pb-6 mb-6 border-b border-zinc-200 dark:border-zinc-800/60">
-                 <div className="flex justify-between items-center text-sm mb-2">
-                   <span className="text-zinc-500">Email</span>
-                   <span className="text-zinc-800 dark:text-zinc-300">{profile?.email || 'N/A'}</span>
-                 </div>
-                 <div className="flex justify-between items-center text-sm">
-                   <span className="text-zinc-500">System Role</span>
-                   <span className="text-indigo-600 dark:text-indigo-400 font-medium">Active</span>
-                 </div>
-              </div>
-
-              <button 
-                onClick={() => { setShowProfileModal(false); setShowLogoutModal(true); }} 
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 rounded-lg transition-all font-medium"
-              >
-                <LogOut size={16} /> Exit / Logout
-              </button>
-            </div>
-          </div>
-        )}
-
-        {showLogoutModal && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm anim-fade-in">
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-6 w-80 shadow-2xl anim-fade-up">
-              <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Confirm Logout</h3>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 leading-relaxed">Are you sure you want to securely log out? You will need to re-authenticate.</p>
-              <div className="flex items-center justify-end gap-3">
-                <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">Cancel</button>
-                <button onClick={logout} className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors shadow-sm">Yes, Logout</button>
-              </div>
-            </div>
-          </div>
-        )}
       </aside>
+      
+      {/* Modals moved outside aside to avoid transform isolation */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm anim-fade-in">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-8 w-full max-w-sm shadow-2xl anim-fade-up relative mx-4">
+            <button onClick={() => setShowProfileModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
+              <X size={18} />
+            </button>
+
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-20 h-20 rounded-full bg-indigo-500/10 border-2 border-indigo-500/30 flex items-center justify-center text-3xl font-bold text-indigo-400 uppercase mb-4">
+                {profile?.first_name?.charAt(0) || <User size={32} />}
+              </div>
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-1">{profile?.first_name} {profile?.last_name}</h3>
+              <p className="text-sm text-zinc-500 dark:text-text-secondary font-mono">@{profile?.username}</p>
+            </div>
+
+            <div className="pb-6 mb-6 border-b border-zinc-200 dark:border-zinc-800/60">
+               <div className="flex justify-between items-center text-sm mb-2">
+                 <span className="text-zinc-500">Email</span>
+                 <span className="text-zinc-800 dark:text-zinc-300">{profile?.email || 'N/A'}</span>
+               </div>
+               <div className="flex justify-between items-center text-sm">
+                 <span className="text-zinc-500">System Role</span>
+                 <span className="text-indigo-600 dark:text-indigo-400 font-medium tracking-wide">
+                    {profile?.roles?.[0] || 'Member'}
+                 </span>
+               </div>
+            </div>
+
+            <button 
+              onClick={() => { setShowProfileModal(false); setShowLogoutModal(true); }} 
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 rounded-lg transition-all font-medium"
+            >
+              <LogOut size={16} /> Exit / Logout
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-110 flex items-center justify-center bg-black/60 backdrop-blur-sm anim-fade-in">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-6 w-full max-w-[320px] shadow-2xl anim-fade-up mx-4">
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Confirm Logout</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 leading-relaxed">Are you sure you want to securely log out? You will need to re-authenticate.</p>
+            <div className="flex items-center justify-end gap-3">
+              <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">Cancel</button>
+              <button onClick={logout} className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors shadow-sm">Yes, Logout</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

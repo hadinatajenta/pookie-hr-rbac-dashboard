@@ -3,7 +3,7 @@
  * Clean, minimal login form using atomic components.
  */
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/atoms/Button';
 import FormField from '../components/molecules/FormField';
@@ -122,6 +122,12 @@ export default function Login() {
               placeholder="••••••••"
               error={errors.password}
             />
+
+            <div className="flex justify-end -mt-2">
+              <Link to="/forgot-password" size="sm" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                Forgot password?
+              </Link>
+            </div>
 
             {globalError && (
               <div className="flex items-start gap-2.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/25 rounded-lg px-3.5 py-3 anim-fade-in shadow-sm dark:shadow-none">
