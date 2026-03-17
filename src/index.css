@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap');
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Brand colors */
+  --color-surface:        #24252a;
+  --color-surface-raised: #2c2d33;
+  --color-surface-high:   #34353c;
+  --color-border:         #3a3b42;
+  --color-border-light:   #44454d;
+
+  /* Text */
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: #a0a3ab;
+  --color-text-muted:     #64676f;
+
+  /* Accent - Indigo */
+  --color-accent:         #6366f1;
+  --color-accent-hover:   #4f52d6;
+  --color-accent-subtle:  rgba(99, 102, 241, 0.12);
+  --color-accent-border:  rgba(99, 102, 241, 0.35);
+
+  /* Semantic */
+  --color-success:        #22c55e;
+  --color-success-subtle: rgba(34, 197, 94, 0.12);
+  --color-danger:         #ef4444;
+  --color-danger-subtle:  rgba(239, 68, 68, 0.12);
+  --color-warning:        #f59e0b;
+  --color-warning-subtle: rgba(245, 158, 11, 0.12);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: theme('colors.zinc.50');
+  color: theme('colors.zinc.900');
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+}
+
+:is(.dark body) {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #5a5b63; }
+
+/* Keyframes */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes expand {
+  from { opacity: 0; transform: scaleY(0.95); transform-origin: top; }
+  to   { opacity: 1; transform: scaleY(1); }
+}
+
+.anim-fade-up    { animation: fadeUp 0.35s ease both; }
+.anim-fade-in    { animation: fadeIn 0.25s ease both; }
+.anim-spin       { animation: spin 0.7s linear infinite; }
+.anim-slide-left { animation: slideInLeft 0.25s ease both; }
+.anim-expand     { animation: expand 0.2s ease both; }
