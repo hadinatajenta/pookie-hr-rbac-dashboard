@@ -12,6 +12,10 @@ import EmployeeList from './pages/employees/EmployeeList';
 import SecuritySettings from './components/SecuritySettings';
 import AuditLogs from './pages/settings/AuditLogs';
 import Roles from './pages/settings/Roles';
+import RoleDetail from './pages/settings/RoleDetail';
+import Permissions from './pages/settings/Permissions';
+import Menus from './pages/settings/Menus';
+import RBACDebug from './pages/settings/RBACDebug';
 import useUserStore from './store/useUserStore';
 import { useEffect } from 'react';
 
@@ -95,10 +99,12 @@ export default function App() {
             {/* Settings Sub-routes */}
             <Route path="settings/users" element={<PagePlaceholder title="User Management" />} />
             <Route path="settings/roles" element={<Roles />} />
-            <Route path="settings/permissions" element={<PagePlaceholder title="Permission Setup" />} />
-            <Route path="settings/menus" element={<PagePlaceholder title="Menu Configurations" />} />
+            <Route path="settings/roles/:id" element={<RoleDetail />} />
+            <Route path="settings/permissions" element={<Permissions />} />
+            <Route path="settings/menus" element={<Menus />} />
             <Route path="settings/audit-logs" element={<AuditLogs />} />
             <Route path="settings/security" element={<SecuritySettings />} />
+            <Route path="settings/rbac-debug" element={<RBACDebug />} />
 
             {/* Any unrecognized sub-route under / redirects to dashboard */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Shield, Plus, Edit2, Trash2, ArrowRight, Info, AlertTriangle, Layers } from 'lucide-react';
 import roleService from '../../services/roleService';
 
 export default function Roles() {
+  const navigate = useNavigate();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -124,20 +126,27 @@ export default function Roles() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleOpenModal(role)}
-                      className="p-2 hover:bg-background rounded-lg text-text-secondary hover:text-accent transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(role.id)}
-                      className="p-2 hover:bg-background rounded-lg text-text-secondary hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => navigate(`/settings/roles/${role.id}`)}
+                        className="p-2 hover:bg-background rounded-lg text-text-secondary hover:text-indigo-500 transition-colors"
+                        title="Manage Permissions & Users"
+                      >
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleOpenModal(role)}
+                        className="p-2 hover:bg-background rounded-lg text-text-secondary hover:text-accent transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(role.id)}
+                        className="p-2 hover:bg-background rounded-lg text-text-secondary hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                 </div>
               </div>
             ))

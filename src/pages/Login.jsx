@@ -68,7 +68,7 @@ export default function Login() {
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-white leading-snug mb-4">
             Manage your team<br />from one place.
           </h2>
-          <p className="text-zinc-500 dark:text-[#a0a3ab] text-sm leading-relaxed">
+          <p className="text-zinc-500 dark:text-text-secondary text-sm leading-relaxed">
             A centralized dashboard for authentication, roles, permissions, and menu management. Clean, fast, and secure.
           </p>
         </div>

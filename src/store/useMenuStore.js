@@ -16,7 +16,7 @@ const useMenuStore = create((set, get) => ({
     set({ isLoading: menus.length === 0 });
 
     try {
-      const response = await api.get('/menus');
+      const response = await api.get('/menus/allowed');
       const newMenus = response.data?.data?.menus || response.data?.menus || response.data?.data || [];
       
       // Update cache only if changed to avoid unnecessary re-renders
