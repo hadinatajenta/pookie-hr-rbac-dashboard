@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { getMenusTree, createMenu, updateMenu, deleteMenu } from '../../services/menus';
 import { getPermissions } from '../../services/permissions';
 import ModalForm from '../../components/ModalForm';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import PermissionGuard from '../../components/PermissionGuard';
-import { Plus, Edit2, Trash2, Folder, FileText, ChevronRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, Folder, FileText, ChevronRight, HelpCircle } from 'lucide-react';
+import GuidedTour from '../../components/GuidedTour';
 
 export default function Menus() {
   const [tree, setTree] = useState([]);
@@ -18,6 +20,12 @@ export default function Menus() {
   const [activeMenu, setActiveMenu] = useState(null);
   
   const [formData, setFormData] = useState({ name: '', path: '', description: '', icon: '', parent_id: 0, sort_order: 0, permission_id: 0 });
+  const [isTourOpen, setIsTourOpen] = useState(false);
+
+  const tourSteps = [
+    { targetId: 'tour-add-menu', title: 'Expand Navigation', content: 'Create a new top-level (root) menu item. These are the main categories visible in the sidebar.' },
+    { targetId: 'tour-save-menu', title: 'Persist Changes', content: 'Always remember to save after modifying the hierarchy or attributes of a menu node.' }
+  ];
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchDependencies = useCallback(async () => {
@@ -59,17 +67,27 @@ export default function Menus() {
     setIsFormOpen(true);
   };
 
+  const handleAddRoot = () => {
+    handleOpenForm(null, 0);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
         const p = { ...formData, parent_id: Number(formData.parent_id), permission_id: Number(formData.permission_id), sort_order: Number(formData.sort_order) };
-        if (activeMenu) await updateMenu(activeMenu.id, p);
-        else await createMenu(p);
+        if (activeMenu) {
+          await updateMenu(activeMenu.id, p);
+          toast.success(`Menu '${p.name}' updated successfully`);
+        } else {
+          await createMenu(p);
+          toast.success(`Menu '${p.name}' created successfully`);
+        }
         setIsFormOpen(false);
         fetchDependencies();
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -79,10 +97,12 @@ export default function Menus() {
     setIsSubmitting(true);
     try {
         await deleteMenu(activeMenu.id);
+        toast.success(`Menu '${activeMenu.name}' deleted permanently`);
         setIsDeleteOpen(false);
         fetchDependencies();
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -102,13 +122,18 @@ export default function Menus() {
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                {node.name}
+               {node.id <= 8 && (
+                 <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded border border-amber-200 dark:border-amber-800 uppercase tracking-tighter">System</span>
+               )}
                {node.permission_id === 0 && <span className="text-[9px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Public</span>}
             </span>
             <span className="text-xs text-gray-500 font-mono mt-0.5">{node.path || '#'}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 sm:opacity-100">
-           {node.id > 8 && (
+           {node.id <= 8 ? (
+              <span className="text-[10px] font-medium text-gray-400 italic bg-gray-50 dark:bg-gray-800/50 px-2 py-1 rounded">Locked Tree</span>
+           ) : (
              <PermissionGuard permission="menus.manage">
                 <button title="Add Submenu" onClick={() => handleOpenForm(null, node.id)} className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                    <Plus size={16} />
@@ -134,9 +159,17 @@ export default function Menus() {
   return (
     <div className="flex flex-col h-full space-y-4 animate-in fade-in zoom-in-95 duration-200">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Navigation Tree</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Navigation Menus</h1>
+          <button 
+            onClick={() => setIsTourOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 transition-colors uppercase tracking-wider border border-indigo-100 dark:border-indigo-800/30"
+          >
+            <HelpCircle size={14} /> Quick Start
+          </button>
+        </div>
         <PermissionGuard permission="menus.manage">
-          <button onClick={() => handleOpenForm(null, 0)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm">
+          <button id="tour-add-menu" onClick={handleAddRoot} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm">
             <Plus size={16} /> Add Root
           </button>
         </PermissionGuard>
@@ -160,46 +193,51 @@ export default function Menus() {
       >
         {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded">{error}</div>}
         <div className="space-y-4">
+           <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30 text-xs text-blue-700 dark:text-blue-400 leading-tight">
+             Define UI navigation elements. Paths starting with '#' are intended for grouping parents only.
+           </div>
            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Menu Name</label>
-                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display Label <span className="text-red-500">*</span></label>
+                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 placeholder:text-gray-400" placeholder="e.g. Sales Report" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Route Path (/path)</label>
-                <input required type="text" value={formData.path} onChange={e => setFormData({...formData, path: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 font-mono text-sm" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Routing Path <span className="text-red-500">*</span></label>
+                <input required type="text" value={formData.path} onChange={e => setFormData({...formData, path: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 font-mono text-sm placeholder:text-gray-400" placeholder="/sales-report" />
               </div>
            </div>
            
            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Permission Lockdown</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Access Control</label>
               <select value={formData.permission_id} onChange={e => setFormData({...formData, permission_id: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100">
-                 <option value={0}>Public (No capabilities required)</option>
+                 <option value={0}>Public View (No capability required)</option>
                  {flatPermissions.map(p => (
-                    <option key={p.id} value={p.id}>[{p.module}] {p.name} - {p.description}</option>
+                    <option key={p.id} value={p.id}>[{p.module}] {p.name}</option>
                  ))}
               </select>
+              <p className="mt-1 text-[11px] text-gray-500">Only users with this permission can see this item.</p>
            </div>
            
            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Parent Node</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Placement Parent</label>
                 <select value={formData.parent_id} onChange={e => setFormData({...formData, parent_id: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100">
-                   <option value={0}>-- ROOT COMPONENT --</option>
+                   <option value={0}>-- TOP LEVEL --</option>
                    {flatMenus.filter(m => m.id !== activeMenu?.id).map(m => (
                       <option key={m.id} value={m.id}>{m.name}</option>
                    ))}
-                </select>
+              </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort Index</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort Order</label>
                 <input type="number" value={formData.sort_order} onChange={e => setFormData({...formData, sort_order: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" />
               </div>
            </div>
            
            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lucide Icon String</label>
-              <input type="text" value={formData.icon} onChange={e => setFormData({...formData, icon: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" placeholder="Shield" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lucide Icon Name</label>
+              <input type="text" value={formData.icon} onChange={e => setFormData({...formData, icon: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 placeholder:text-gray-400" placeholder="e.g. Activity, PieChart, Shield" />
+              <p className="mt-1 text-[11px] text-gray-500">Standard Lucide icon string case-sensitive.</p>
            </div>
         </div>
       </ModalForm>

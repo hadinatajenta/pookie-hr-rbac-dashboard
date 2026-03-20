@@ -15,6 +15,7 @@ const ALWAYS_ALLOWED_PREFIXES = [
   '/dashboard',
   '/settings',
   '/unauthorized',
+  '/guides',
 ];
 
 const isAlwaysAllowed = (path) =>
@@ -60,7 +61,10 @@ const ContentWrapper = () => {
     for (const item of items) {
       // Ensure item.path starts with '/' for consistent comparison
       const itemPath = item.path ? (item.path.startsWith('/') ? item.path : `/${item.path}`) : null;
-      if (itemPath === targetPath) return true;
+      
+      // Match exact path OR allow sub-routes (e.g. /roles/1 should be allowed if /roles is allowed)
+      if (itemPath === targetPath || (itemPath && targetPath.startsWith(itemPath + '/'))) return true;
+      
       if (item.children && item.children.length > 0) {
         if (checkPath(item.children, targetPath)) return true;
       }
@@ -104,7 +108,7 @@ const AppLayout = () => {
           onToggleSidebar={handleToggleSidebar}
         />
 
-        <div className="flex-1 overflow-y-auto w-full">
+        <div className="flex-1 overflow-y-auto w-full relative">
           <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto h-full">
             <ContentWrapper />
           </div>
@@ -115,4 +119,3 @@ const AppLayout = () => {
 };
 
 export default AppLayout;
-

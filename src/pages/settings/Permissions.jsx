@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { getPermissions, createPermission, updatePermission, deletePermission } from '../../services/permissions';
 import DataTable from '../../components/DataTable';
 import ModalForm from '../../components/ModalForm';
@@ -52,13 +53,16 @@ export default function Permissions() {
     try {
       if (activePerm) {
         await updatePermission(activePerm.id, formData);
+        toast.success(`Permission '${formData.name}' updated successfully`);
       } else {
         await createPermission(formData);
+        toast.success(`Permission '${formData.name}' created successfully`);
       }
       setIsFormOpen(false);
       fetchPermissions();
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -68,10 +72,12 @@ export default function Permissions() {
     setIsSubmitting(true);
     try {
       await deletePermission(activePerm.id);
+      toast.success(`Permission '${activePerm.name}' deleted permanently`);
       setIsDeleteOpen(false);
       fetchPermissions();
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -124,22 +130,25 @@ export default function Permissions() {
       >
         {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded">{error}</div>}
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Permission Code (e.g. users.manage)</label>
-            <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" />
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30 text-xs text-blue-700 dark:text-blue-400">
+            Internal capability identifiers. Follow the convention: <code className="bg-blue-100 dark:bg-blue-900 p-0.5 rounded">module.action</code>.
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-            <input required type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Capability Identifier <span className="text-red-500">*</span></label>
+            <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 placeholder:text-gray-400" placeholder="e.g. inventory.write" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Brief Description <span className="text-red-500">*</span></label>
+            <input required type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 placeholder:text-gray-400" placeholder="Allows creating and editing inventory items" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Module Group</label>
-              <input type="text" value={formData.module} onChange={e => setFormData({...formData, module: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 placeholder:text-gray-400" placeholder="users" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Module Group <span className="text-red-500">*</span></label>
+              <input required type="text" value={formData.module} onChange={e => setFormData({...formData, module: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 placeholder:text-gray-400" placeholder="inventory" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Action Context</label>
-              <input type="text" value={formData.action} onChange={e => setFormData({...formData, action: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 placeholder:text-gray-400" placeholder="manage" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Action Verb <span className="text-red-500">*</span></label>
+              <input required type="text" value={formData.action} onChange={e => setFormData({...formData, action: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 placeholder:text-gray-400" placeholder="write" />
             </div>
           </div>
         </div>

@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { getUsers, createUser, updateUser, deleteUser, assignUserRole, removeUserRole, getUserRoles } from '../../services/users';
 import { getRoles } from '../../services/roles';
 import DataTable from '../../components/DataTable';
 import ModalForm from '../../components/ModalForm';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import PermissionGuard from '../../components/PermissionGuard';
-import { Plus, Edit2, Trash2, Shield } from 'lucide-react';
-
-import PermissionGuard from '../../components/PermissionGuard';
-import { Plus, Edit2, Trash2, Shield } from 'lucide-react';
+import { Plus, Edit2, Trash2, Shield, HelpCircle } from 'lucide-react';
 import useUserStore from '../../store/useUserStore';
+import GuidedTour from '../../components/GuidedTour';
 
 export default function Users() {
   const { profile } = useUserStore();
@@ -25,6 +24,13 @@ export default function Users() {
   // Active records
   const [activeUser, setActiveUser] = useState(null);
   const [activeUserRoles, setActiveUserRoles] = useState([]);
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  
+  const tourSteps = [
+    { targetId: 'tour-add-user', title: 'Create Identity', content: 'Use this button to provision a new user account. You will need a unique username and email.' },
+    { targetId: 'tour-roles-user', title: 'Manage Capabilities', content: 'This shield icon is crucial. It lets you assign "Roles" which determine what this specific person can access across the platform.' },
+    { targetId: 'tour-edit-user', title: 'Update Profile', content: 'Need to reset a password or change a name? The edit tool allows for quick profile adjustments.' }
+  ];
   
   // Form state
   const [formData, setFormData] = useState({ username: '', email: '', first_name: '', last_name: '', password: '' });
@@ -78,13 +84,16 @@ export default function Users() {
         const payload = { ...formData };
         if (!payload.password) delete payload.password; // Don't send empty password updates
         await updateUser(activeUser.id, payload);
+        toast.success(`User @${payload.username} updated successfully`);
       } else {
         await createUser(formData);
+        toast.success(`User @${formData.username} created successfully`);
       }
       setIsFormOpen(false);
       fetchUsers();
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -94,10 +103,12 @@ export default function Users() {
     setIsSubmitting(true);
     try {
       await deleteUser(activeUser.id);
+      toast.success(`User @${activeUser.username} deleted permanently`);
       setIsDeleteOpen(false);
       fetchUsers();
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -119,19 +130,30 @@ export default function Users() {
       if (isAssigned) {
         await removeUserRole(activeUser.id, roleId);
         setActiveUserRoles(prev => prev.filter(r => r.id !== roleId));
+        toast.success('Role removed successfully');
       } else {
         await assignUserRole(activeUser.id, roleId);
         const role = allRoles.find(r => r.id === roleId);
         if (role) setActiveUserRoles(prev => [...prev, role]);
+        toast.success('Role assigned successfully');
       }
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
   const columns = [
-    { key: 'username', title: 'Username' },
+    { key: 'username', title: 'Username', render: row => (
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">{row.username}</span>
+          {row.id === 1 && (
+            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded border border-amber-200 dark:border-amber-800 uppercase tracking-tighter">
+              System
+            </span>
+          )}
+        </div>
+    )},
     { key: 'email', title: 'Email' },
     { key: 'first_name', title: 'First Name' },
     { key: 'last_name', title: 'Last Name' },
@@ -141,14 +163,18 @@ export default function Users() {
       render: (row) => (
         <div className="flex items-center gap-2">
           <PermissionGuard permission="users.manage">
-            <button onClick={() => handleOpenForm(row)} className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors">
+            <button id="tour-edit-user" title="Edit Identity" onClick={() => handleOpenForm(row)} className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors">
               <Edit2 size={16} />
             </button>
-            <button onClick={() => handleOpenRoles(row)} className="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-md transition-colors">
+            <button id="tour-roles-user" title="Manage Capabilities" onClick={() => handleOpenRoles(row)} className="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-md transition-colors">
               <Shield size={16} />
             </button>
-            {row.id !== 1 && row.id !== (profile?.id || 0) && (
-              <button onClick={() => { setActiveUser(row); setIsDeleteOpen(true); }} className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors">
+            {row.id === 1 || row.id === (profile?.id || 0) ? (
+              <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 italic bg-gray-50 dark:bg-gray-800/50 px-2 py-1 rounded">
+                Protected
+              </span>
+            ) : (
+              <button title="Delete Account" onClick={() => { setActiveUser(row); setIsDeleteOpen(true); }} className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors">
                 <Trash2 size={16} />
               </button>
             )}
@@ -161,9 +187,18 @@ export default function Users() {
   return (
     <div className="flex flex-col h-full space-y-4 animate-in fade-in zoom-in-95 duration-200">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
+          <button 
+            onClick={() => setIsTourOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 transition-colors uppercase tracking-wider border border-indigo-100 dark:border-indigo-800/30"
+          >
+            <HelpCircle size={14} /> Quick Start
+          </button>
+        </div>
         <PermissionGuard permission="users.manage">
           <button 
+            id="tour-add-user"
             onClick={() => handleOpenForm()}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
           >
@@ -185,27 +220,30 @@ export default function Users() {
       >
         {error && <div className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-3 rounded-md border border-red-200 dark:border-red-800/50 mb-4">{error}</div>}
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
-            <input required type="text" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" />
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30 mb-4 text-xs text-blue-700 dark:text-blue-400 leading-tight">
+            Configure basic identity details. Usernames and emails must be unique within the system.
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-            <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username <span className="text-red-500">*</span></label>
+            <input required type="text" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" placeholder="e.g. jsmith" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email <span className="text-red-500">*</span></label>
+            <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" placeholder="name@company.com" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
-              <input type="text" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" />
+              <input type="text" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" placeholder="John" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
-              <input type="text" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" />
+              <input type="text" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" placeholder="Doe" />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password {activeUser && "(Leave blank to keep unchanged)"}</label>
-            <input required={!activeUser} type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password {!activeUser && <span className="text-red-500">*</span>}</label>
+            <input required={!activeUser} type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100" placeholder={activeUser ? "Leave blank to keep current" : "Min 8 characters"} />
           </div>
         </div>
       </ModalForm>
@@ -227,12 +265,16 @@ export default function Users() {
                  <label key={role.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-surface cursor-pointer transition-colors">
                    <input 
                      type="checkbox" 
-                     className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" 
+                     className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 disabled:opacity-50" 
                      checked={isAssigned}
+                     disabled={activeUser?.id === profile?.id}
                      onChange={() => handleToggleRole(role.id, isAssigned)}
                    />
                    <div className="flex flex-col">
-                     <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{role.name}</span>
+                     <span className={`text-sm font-medium ${activeUser?.id === profile?.id ? 'text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                        {role.name}
+                        {activeUser?.id === profile?.id && " (Protected)"}
+                     </span>
                      {role.description && <span className="text-xs text-gray-500">{role.description}</span>}
                    </div>
                  </label>
@@ -249,6 +291,12 @@ export default function Users() {
         confirmText="Delete"
         onConfirm={handleDelete}
         onCancel={() => setIsDeleteOpen(false)}
+      />
+
+      <GuidedTour 
+        isOpen={isTourOpen} 
+        steps={tourSteps} 
+        onClose={() => setIsTourOpen(false)} 
       />
     </div>
   );

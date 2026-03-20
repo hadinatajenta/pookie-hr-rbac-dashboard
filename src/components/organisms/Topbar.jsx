@@ -5,7 +5,7 @@
 import Avatar from '../atoms/Avatar';
 import Button from '../atoms/Button';
 import Badge from '../atoms/Badge';
-import { Menu } from 'lucide-react';
+import { Menu, HelpCircle } from 'lucide-react';
 
 export default function Topbar({ title, profile, onLogout, onToggleSidebar }) {
   return (
@@ -39,6 +39,7 @@ export default function Topbar({ title, profile, onLogout, onToggleSidebar }) {
         </div>
 
         <div className="w-px h-5 bg-zinc-200 dark:bg-[#3a3b42] hidden sm:block" />
+
 
         <Button variant="ghost" size="sm" onClick={onLogout} className="gap-1.5 px-2 sm:px-3">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

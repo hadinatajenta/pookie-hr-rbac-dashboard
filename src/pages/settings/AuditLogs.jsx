@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getAuditLogs } from '../../services/auditLogs';
 import DataTable from '../../components/DataTable';
-import { ShieldAlert, Search } from 'lucide-react';
+import { ShieldAlert, Search, HelpCircle } from 'lucide-react';
+import GuidedTour from '../../components/GuidedTour';
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isTourOpen, setIsTourOpen] = useState(false);
   
   // Pagination & Filters State
   const [page, setPage] = useState(1);
@@ -17,6 +19,10 @@ export default function AuditLogs() {
   const [userIdFilter, setUserIdFilter] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [resourceFilter, setResourceFilter] = useState('');
+
+  const tourSteps = [
+    { targetId: 'tour-filter-audit', title: 'Trace Actions', content: 'Use the filter tool to search for specific actions, resources, or actors. This is your primary tool for forensic investigation.' }
+  ];
 
   const fetchLogs = useCallback(async () => {
     setIsLoading(true);
@@ -80,11 +86,14 @@ export default function AuditLogs() {
   return (
     <div className="flex flex-col h-full space-y-4 animate-in fade-in zoom-in-95 duration-200">
       <div className="flex items-center justify-between">
-        <div>
-           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-             <ShieldAlert size={24} className="text-amber-500" /> Administrative Audit Graph
-           </h1>
-           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Irrevocable historic action traces within the protected API boundary.</p>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Audit Forensics</h1>
+          <button 
+            onClick={() => setIsTourOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 transition-colors uppercase tracking-wider border border-indigo-100 dark:border-indigo-800/30"
+          >
+            <HelpCircle size={14} /> Quick Start
+          </button>
         </div>
       </div>
       
@@ -92,17 +101,17 @@ export default function AuditLogs() {
       <form onSubmit={handleApplyFilters} className="bg-white dark:bg-[#1a1b1e] p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-end gap-4">
          <div className="flex-1">
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Actor ID</label>
-            <input type="number" placeholder="Sys ID" value={userIdFilter} onChange={e => setUserIdFilter(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-surface text-gray-900 dark:text-gray-100" />
+            <input type="number" placeholder="Sys ID (e.g. 1)" value={userIdFilter} onChange={e => setUserIdFilter(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-surface text-gray-900 dark:text-gray-100" />
          </div>
          <div className="flex-1">
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Action Code</label>
-            <input type="text" placeholder="e.g. CREATE" value={actionFilter} onChange={e => setActionFilter(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-surface text-gray-900 dark:text-gray-100" />
+            <input type="text" placeholder="e.g. DELETE, LOGIN" value={actionFilter} onChange={e => setActionFilter(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-surface text-gray-900 dark:text-gray-100" />
          </div>
          <div className="flex-1">
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Resource</label>
-            <input type="text" placeholder="e.g. user" value={resourceFilter} onChange={e => setResourceFilter(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-surface text-gray-900 dark:text-gray-100" />
+            <input type="text" placeholder="e.g. user, menu" value={resourceFilter} onChange={e => setResourceFilter(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-surface text-gray-900 dark:text-gray-100" />
          </div>
-         <button type="submit" className="px-5 py-2 h-[38px] bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow-sm flex items-center gap-2 transition-colors">
+         <button id="tour-filter-audit" type="submit" className="px-5 py-2 h-[38px] bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow-sm flex items-center gap-2 transition-colors">
             <Search size={16} /> Filter Forensics
          </button>
       </form>
@@ -112,6 +121,12 @@ export default function AuditLogs() {
       <div className="flex-1 bg-white dark:bg-[#1a1b1e] rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 relative min-h-[400px]">
         <DataTable columns={columns} data={logs} isLoading={isLoading} emptyState="Empty timeline index." pagination={paginationInfo} />
       </div>
+
+      <GuidedTour 
+        isOpen={isTourOpen} 
+        steps={tourSteps} 
+        onClose={() => setIsTourOpen(false)} 
+      />
     </div>
   );
 }

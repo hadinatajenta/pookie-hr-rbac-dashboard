@@ -7,6 +7,7 @@ const useUserStore = create((set) => ({
   isLoading: false,
   error: null,
   theme: localStorage.getItem('theme') || 'dark',
+  onboardingComplete: localStorage.getItem('onboardingComplete') === 'true',
 
   fetchProfile: async () => {
     set({ isLoading: true });
@@ -39,6 +40,11 @@ const useUserStore = create((set) => ({
       }
       return { theme: newTheme };
     });
+  },
+
+  setOnboardingComplete: (complete) => {
+    localStorage.setItem('onboardingComplete', complete ? 'true' : 'false');
+    set({ onboardingComplete: complete });
   },
 
   clearUser: () => set({ profile: null, error: null }),

@@ -25,6 +25,11 @@ function buildTree(menus) {
 
 export default function Sidebar({ menus, activeMenu, onSelect, profile, onLogout }) {
   const tree = buildTree(menus);
+  
+  // Append Guides manually for visibility
+  if (!tree.find(m => m.path === '/guides')) {
+    tree.unshift({ id: 'guides-static', name: 'Guides', icon: 'file-text', path: '/guides', children: [], sort_order: -1 });
+  }
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 w-60 flex flex-col bg-[#1e1f24] border-r border-[#2e2f36]">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getRole, getRolePermissions, assignRolePermission, removeRolePermission } from '../../services/roles';
 import { getGroupedPermissions } from '../../services/permissions';
@@ -46,12 +47,14 @@ export default function RoleDetail() {
           next.delete(permId);
           return next;
         });
+        toast.success(`Permission revoked`);
       } else {
         await assignRolePermission(id, permId);
         setActivePerms(prev => new Set([...prev, permId]));
+        toast.success(`Permission assigned`);
       }
     } catch (err) {
-      alert(err.message || 'Failed to toggle permission');
+      toast.error(err.message || 'Failed to toggle permission');
     }
   };
 
@@ -74,7 +77,7 @@ export default function RoleDetail() {
         {Object.entries(groupedParams).map(([groupName, perms]) => (
           <div key={groupName} className="bg-white dark:bg-[#1a1b1e] rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
              <div className="bg-gray-50 dark:bg-surface p-4 font-semibold text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-800 uppercase tracking-widest text-xs">
-                {groupName} Capabilities
+                {groupName} Capabilities 
              </div>
              <div className="divide-y divide-gray-100 dark:divide-gray-800/60 p-2">
                 {perms.map(p => {
@@ -83,7 +86,7 @@ export default function RoleDetail() {
                      <label key={p.id} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-[#2a2b30] rounded-lg cursor-pointer transition-colors group">
                        <div className="flex flex-col">
                          <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 select-none">
-                           {p.name}
+                           {p.name} 
                          </span>
                          <span className="text-xs text-gray-500 select-none mt-0.5">{p.description}</span>
                        </div>

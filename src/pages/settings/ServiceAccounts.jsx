@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getServiceAccounts, createServiceAccount, revokeServiceAccount } from '../../services/serviceAccounts';
+import toast from 'react-hot-toast';
+import { getServiceAccounts, createServiceAccount, deleteServiceAccount } from '../../services/serviceAccounts';
 import DataTable from '../../components/DataTable';
 import ModalForm from '../../components/ModalForm';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import PermissionGuard from '../../components/PermissionGuard';
-import { Plus, Trash2, KeyRound, Copy, CheckCircle2 } from 'lucide-react';
+import { Plus, Key, Trash2, Copy, Check, Eye, EyeOff, ShieldCheck, HelpCircle } from 'lucide-react';
+import GuidedTour from '../../components/GuidedTour';
 
 export default function ServiceAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -17,6 +19,11 @@ export default function ServiceAccounts() {
   const [formData, setFormData] = useState({ name: '', description: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [isTourOpen, setIsTourOpen] = useState(false);
+
+  const tourSteps = [
+    { targetId: 'tour-generate-key', title: 'Machine Access', content: 'Generate high-entropy secret keys for specialized scripts or services. Warning: These are only shown ONCE.' }
+  ];
 
   // New Key Modal
   const [newKey, setNewKey] = useState(null);
@@ -53,10 +60,12 @@ export default function ServiceAccounts() {
       const resp = await createServiceAccount(formData);
       // Backend returns the raw API key ONLY on creation
       if (resp.data?.api_key) setNewKey(resp.data.api_key);
+      toast.success(`Service account '${formData.name}' created successfully`);
       fetchAccounts();
       // Keep form open to show the token
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -65,11 +74,13 @@ export default function ServiceAccounts() {
   const handleRevoke = async () => {
     setIsSubmitting(true);
     try {
-      await revokeServiceAccount(activeAccount.id);
+      await deleteServiceAccount(activeAccount.id); // Changed to deleteServiceAccount
+      toast.success(`Service account '${activeAccount.name}' revoked permanently`);
       setIsRevokeOpen(false);
       fetchAccounts();
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -78,6 +89,7 @@ export default function ServiceAccounts() {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(newKey);
     setCopied(true);
+    toast.success('API Key copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -114,10 +126,18 @@ export default function ServiceAccounts() {
   return (
     <div className="flex flex-col h-full space-y-4 animate-in fade-in zoom-in-95 duration-200">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Service Accounts</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Service Accounts</h1>
+          <button 
+            onClick={() => setIsTourOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg hover:bg-indigo-100 transition-colors uppercase tracking-wider border border-indigo-100 dark:border-indigo-800/30"
+          >
+            <HelpCircle size={14} /> Quick Start
+          </button>
+        </div>
         <PermissionGuard permission="service_accounts.manage">
-          <button onClick={handleOpenForm} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm">
-            <KeyRound size={16} /> Generate Secret Key
+          <button id="tour-generate-key" onClick={() => setIsFormOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
+            <Plus size={16} /> Generate Secret Key
           </button>
         </PermissionGuard>
       </div>
@@ -138,25 +158,32 @@ export default function ServiceAccounts() {
               <div className="relative">
                  <input readOnly type="text" value={newKey} className="w-full pl-3 pr-12 py-3 border border-gray-300 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono text-sm selection:bg-indigo-500/30" />
                  <button type="button" onClick={copyToClipboard} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-500 hover:text-indigo-600 transition-colors">
-                    {copied ? <CheckCircle2 size={18} className="text-green-500" /> : <Copy size={18} />}
+                    {copied ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
                  </button>
               </div>
            </div>
         ) : (
            <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">System Identifier</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Service Identifier <span className="text-red-500">*</span></label>
               <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 placeholder:text-gray-400" placeholder="e.g. payment-gateway-production" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-              <input required type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 placeholder:text-gray-400" placeholder="Used by legacy stripe connector..." />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description <span className="text-red-500">*</span></label>
+              <input required type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-gray-100 placeholder:text-gray-400" placeholder="Briefly explain the purpose of this credential..." />
             </div>
            </div>
         )}
       </ModalForm>
 
       <ConfirmDialog isOpen={isRevokeOpen} title="Revoke Key Access" message={`Are you absolute sure you want to revoke '${activeAccount?.name}'? Any systems using this token will instantly lose authorization payload capability.`} confirmText="Forcibly Revoke" confirmColor="bg-red-600 hover:bg-red-700" onConfirm={handleRevoke} onCancel={() => setIsRevokeOpen(false)} />
+
+      <GuidedTour 
+        isOpen={isTourOpen} 
+        steps={tourSteps} 
+        onClose={() => setIsTourOpen(false)} 
+      />
     </div>
   );
 }
+

@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import AppLayout from './components/layout/AppLayout';
@@ -26,6 +27,7 @@ const Permissions = lazy(() => import('./pages/settings/Permissions'));
 const Menus = lazy(() => import('./pages/settings/Menus'));
 const AuditLogs = lazy(() => import('./pages/settings/AuditLogs'));
 const ServiceAccounts = lazy(() => import('./pages/settings/ServiceAccounts').catch(() => ({ default: () => <PagePlaceholder title="Service Accounts" /> })));
+const Guides = lazy(() => import('./pages/settings/Guides'));
 
 const FallbackLoader = () => (
   <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-zinc-950">
@@ -46,6 +48,16 @@ export default function App() {
 
   return (
     <AuthProvider>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: theme === 'dark' ? '#18181b' : '#ffffff',
+            color: theme === 'dark' ? '#ffffff' : '#18181b',
+            border: theme === 'dark' ? '1px solid #27272a' : '1px solid #e4e4e7',
+          },
+        }}
+      />
       <BrowserRouter>
         <Suspense fallback={<FallbackLoader />}>
           <Routes>
@@ -85,6 +97,7 @@ export default function App() {
               <Route path="menus" element={<Menus />} />
               <Route path="service-accounts" element={<ServiceAccounts />} />
               <Route path="audit-logs" element={<AuditLogs />} />
+              <Route path="guides" element={<Guides />} />
 
               {/* Sub-route unknown redirect */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />

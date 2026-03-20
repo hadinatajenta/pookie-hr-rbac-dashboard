@@ -25,6 +25,7 @@ export default function NavItem({ item, depth = 0, activeId, onSelect }) {
   return (
     <li className="list-none">
       <button
+        id={`tour-nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
         type="button"
         onClick={() => (hasChildren ? setOpen((o) => !o) : onSelect(item))}
         style={{ paddingLeft: `${12 + indent}px` }}
