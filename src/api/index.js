@@ -34,56 +34,60 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
+    const message = error.response?.data?.message || '';
 
-    if (status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) {
-        window.location.href = '/login';
+    if (status === 401) {
+      // Account lockout — inform the user immediately, do not attempt token refresh
+      if (message.toLowerCase().includes('locked')) {
+        error.message = 'Account locked. Please try again in 15 minutes.';
         return Promise.reject(error);
       }
 
-      try {
-        const res = await axios.post(`${api.defaults.baseURL}/auth/refresh`, {
-          refresh_token: refreshToken,
-        });
+      if (!originalRequest._retry) {
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+            .then((token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              return api(originalRequest);
+            })
+            .catch((err) => Promise.reject(err));
+        }
 
-        const { access_token, refresh_token } = res.data.data;
-        localStorage.setItem('accessToken', access_token);
-        localStorage.setItem('refreshToken', refresh_token);
+        originalRequest._retry = true;
+        isRefreshing = true;
 
-        api.defaults.headers.common.Authorization = `Bearer ${access_token}`;
-        processQueue(null, access_token);
-        
-        return api(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('menuData');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) {
+          window.location.href = '/login';
+          return Promise.reject(error);
+        }
+
+        try {
+          const res = await axios.post(`${api.defaults.baseURL}/auth/refresh`, {
+            refresh_token: refreshToken,
+          });
+
+          const { access_token, refresh_token } = res.data.data;
+          localStorage.setItem('accessToken', access_token);
+          localStorage.setItem('refreshToken', refresh_token);
+
+          api.defaults.headers.common.Authorization = `Bearer ${access_token}`;
+          processQueue(null, access_token);
+
+          return api(originalRequest);
+        } catch (refreshError) {
+          processQueue(refreshError, null);
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('menuData');
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
       }
-    }
-
-    // Special handling for Lockout and Rate Limiting
-    if (status === 403 && error.response?.data?.message?.includes('locked')) {
-      error.message = 'Account locked. Please try again in 15 minutes.';
     }
 
     if (status === 429) {

@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import useMenuStore from '../store/useMenuStore';
 import useUserStore from '../store/useUserStore';
 import StatCard from '../components/molecules/StatCard';
-import Badge from '../components/atoms/Badge';
 import Spinner from '../components/atoms/Spinner';
 
 const ICON_MAP = {

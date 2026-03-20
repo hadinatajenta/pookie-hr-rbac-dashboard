@@ -19,12 +19,8 @@ export default function ForgotPassword() {
     setMessage('');
     
     try {
-      const res = await API.post('/auth/forgot-password', { email });
-      setMessage('A reset token has been generated. In production, this would be sent to your email.');
-      // For demo purposes, we might show the token if the backend returns it
-      if (res.data.data?.reset_token) {
-         setMessage(`Reset token generated: ${res.data.data.reset_token}`);
-      }
+      await API.post('/auth/forgot-password', { email });
+      setMessage('If that email exists, a reset link has been sent. Please check your inbox.');
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {

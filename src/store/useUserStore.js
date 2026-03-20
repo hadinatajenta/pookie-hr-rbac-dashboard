@@ -3,6 +3,7 @@ import api from '../api';
 
 const useUserStore = create((set) => ({
   profile: null,
+  permissions: [],
   isLoading: false,
   error: null,
   theme: localStorage.getItem('theme') || 'dark',
@@ -10,8 +11,16 @@ const useUserStore = create((set) => ({
   fetchProfile: async () => {
     set({ isLoading: true });
     try {
-      const response = await api.get('/me');
-      set({ profile: response.data.data, isLoading: false, error: null });
+      const [profileRes, permsRes] = await Promise.all([
+        api.get('/me'),
+        api.get('/me/permissions')
+      ]);
+      set({
+        profile: profileRes.data.data,
+        permissions: permsRes.data.data || [],
+        isLoading: false,
+        error: null
+      });
     } catch (error) {
       set({ error: error.message, isLoading: false });
     }

@@ -1,23 +1,37 @@
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
-import Login from './pages/Login';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import Dashboard from './pages/Dashboard';
-import Unauthorized from './pages/Unauthorized';
 import AppLayout from './components/layout/AppLayout';
-import PagePlaceholder from './components/PagePlaceholder';
-import EmployeeList from './pages/employees/EmployeeList';
-import SecuritySettings from './components/SecuritySettings';
-import AuditLogs from './pages/settings/AuditLogs';
-import Roles from './pages/settings/Roles';
-import RoleDetail from './pages/settings/RoleDetail';
-import Permissions from './pages/settings/Permissions';
-import Menus from './pages/settings/Menus';
-import RBACDebug from './pages/settings/RBACDebug';
 import useUserStore from './store/useUserStore';
-import { useEffect } from 'react';
+import PagePlaceholder from './components/PagePlaceholder';
+
+// --- Lazy loaded core views ---
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Unauthorized = lazy(() => import('./pages/Unauthorized'));
+
+// --- Lazy loaded functional views ---
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const SecuritySettings = lazy(() => import('./components/SecuritySettings'));
+const RBACDebug = lazy(() => import('./pages/settings/RBACDebug'));
+
+// --- Lazy loaded Auth-Service Administration views ---
+const Users = lazy(() => import('./pages/settings/Users').catch(() => ({ default: () => <PagePlaceholder title="User Management" /> })));
+const Roles = lazy(() => import('./pages/settings/Roles'));
+const RoleDetail = lazy(() => import('./pages/settings/RoleDetail'));
+const Permissions = lazy(() => import('./pages/settings/Permissions'));
+const Menus = lazy(() => import('./pages/settings/Menus'));
+const AuditLogs = lazy(() => import('./pages/settings/AuditLogs'));
+const ServiceAccounts = lazy(() => import('./pages/settings/ServiceAccounts').catch(() => ({ default: () => <PagePlaceholder title="Service Accounts" /> })));
+
+const FallbackLoader = () => (
+  <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-zinc-950">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 block"></div>
+  </div>
+);
 
 export default function App() {
   const theme = useUserStore((state) => state.theme);
@@ -33,86 +47,53 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <AppLayout />
-              </PrivateRoute>
-            }
-          >
-            {/* Index redirects to dashboard */}
-            <Route index element={<Navigate to="/dashboard" replace />} />
+        <Suspense fallback={<FallbackLoader />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <AppLayout />
+                </PrivateRoute>
+              }
+            >
+              {/* Index redirects to dashboard */}
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              
+              {/* Unauthorized Route */}
+              <Route path="unauthorized" element={<Unauthorized />} />
+
+              {/* Dashboard Route */}
+              <Route path="dashboard" element={<Dashboard />} />
+              
+              {/* Top-Level Parent Routes */}
+              <Route path="settings" element={<PagePlaceholder title="Settings" />} />
+
+              {/* Settings Sub-routes */}
+              <Route path="settings/security" element={<SecuritySettings />} />
+              <Route path="settings/rbac-debug" element={<RBACDebug />} />
+
+              {/* Administration Routes (from Seed) */}
+              <Route path="users" element={<Users />} />
+              <Route path="roles" element={<Roles />} />
+              <Route path="roles/:id" element={<RoleDetail />} />
+              <Route path="permissions" element={<Permissions />} />
+              <Route path="menus" element={<Menus />} />
+              <Route path="service-accounts" element={<ServiceAccounts />} />
+              <Route path="audit-logs" element={<AuditLogs />} />
+
+              {/* Sub-route unknown redirect */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Route>
             
-            {/* Unauthorized Route */}
-            <Route path="unauthorized" element={<Unauthorized />} />
-
-            {/* Dashboard Route */}
-            <Route path="dashboard" element={<Dashboard />} />
-            
-            {/* Top-Level Parent Routes (Optional if they have their own landing pages, else redirect to child or show placeholder) */}
-            <Route path="employees" element={<PagePlaceholder title="Employees" />} />
-            <Route path="attendance" element={<PagePlaceholder title="Attendance" />} />
-            <Route path="payroll" element={<PagePlaceholder title="Payroll" />} />
-            <Route path="recruitment" element={<PagePlaceholder title="Recruitment" />} />
-            <Route path="performance" element={<PagePlaceholder title="Performance" />} />
-            <Route path="projects" element={<PagePlaceholder title="Projects" />} />
-            <Route path="reports" element={<PagePlaceholder title="Reports" />} />
-            <Route path="settings" element={<PagePlaceholder title="Settings" />} />
-
-            {/* Employees Sub-routes */}
-            <Route path="employees/list" element={<EmployeeList />} />
-            <Route path="employees/roles" element={<PagePlaceholder title="Employee Roles" />} />
-            <Route path="employees/departments" element={<PagePlaceholder title="Departments" />} />
-
-            {/* Attendance Sub-routes */}
-            <Route path="attendance/checkin" element={<PagePlaceholder title="Check-in/Check-out" />} />
-            <Route path="attendance/records" element={<PagePlaceholder title="Attendance Records" />} />
-            <Route path="attendance/leave" element={<PagePlaceholder title="Leave Requests" />} />
-
-            {/* Payroll Sub-routes */}
-            <Route path="payroll/salary" element={<PagePlaceholder title="Salary Configurations" />} />
-            <Route path="payroll/payslips" element={<PagePlaceholder title="Payslips" />} />
-            <Route path="payroll/reimbursements" element={<PagePlaceholder title="Reimbursements" />} />
-
-            {/* Recruitment Sub-routes */}
-            <Route path="recruitment/jobs" element={<PagePlaceholder title="Job Postings" />} />
-            <Route path="recruitment/candidates" element={<PagePlaceholder title="Candidates" />} />
-            <Route path="recruitment/interviews" element={<PagePlaceholder title="Interviews" />} />
-
-            {/* Performance Sub-routes */}
-            <Route path="performance/goals" element={<PagePlaceholder title="Performance Goals" />} />
-            <Route path="performance/reviews" element={<PagePlaceholder title="Performance Reviews" />} />
-
-            {/* Projects Sub-routes */}
-            <Route path="projects/list" element={<PagePlaceholder title="Project List" />} />
-            <Route path="projects/tasks" element={<PagePlaceholder title="Tasks" />} />
-
-            {/* Reports Sub-routes */}
-            <Route path="reports/hr" element={<PagePlaceholder title="HR Reports" />} />
-            <Route path="reports/payroll" element={<PagePlaceholder title="Payroll Reports" />} />
-
-            {/* Settings Sub-routes */}
-            <Route path="settings/users" element={<PagePlaceholder title="User Management" />} />
-            <Route path="settings/roles" element={<Roles />} />
-            <Route path="settings/roles/:id" element={<RoleDetail />} />
-            <Route path="settings/permissions" element={<Permissions />} />
-            <Route path="settings/menus" element={<Menus />} />
-            <Route path="settings/audit-logs" element={<AuditLogs />} />
-            <Route path="settings/security" element={<SecuritySettings />} />
-            <Route path="settings/rbac-debug" element={<RBACDebug />} />
-
-            {/* Any unrecognized sub-route under / redirects to dashboard */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Route>
-          
-          {/* Global catch-all redirects to root which is caught by PrivateRoute */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Global catch-all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   );

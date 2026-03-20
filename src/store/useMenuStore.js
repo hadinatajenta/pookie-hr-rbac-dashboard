@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import api from '../api';
+import { getMenusAllowed } from '../services/menus';
 
 const useMenuStore = create((set, get) => ({
   menus: JSON.parse(localStorage.getItem('menuData')) || [],
@@ -16,8 +16,8 @@ const useMenuStore = create((set, get) => ({
     set({ isLoading: menus.length === 0 });
 
     try {
-      const response = await api.get('/menus/allowed');
-      const newMenus = response.data?.data?.menus || response.data?.menus || response.data?.data || [];
+      const response = await getMenusAllowed();
+      const newMenus = response.data?.menus || response.data || response; // normalized by getMenusAllowed
       
       // Update cache only if changed to avoid unnecessary re-renders
       const newMenusStr = JSON.stringify(newMenus);
@@ -30,9 +30,9 @@ const useMenuStore = create((set, get) => ({
     } catch (error) {
       console.error('Menu fetch failed:', error);
       set({ 
-        error: error.response?.data?.message || 'Failed to fetch menus', 
+        error: error.message || 'Failed to fetch menus', 
         isLoading: false,
-        isInitialized: true // Mark as initialized even on error if we have cache
+        isInitialized: true
       });
     }
   },

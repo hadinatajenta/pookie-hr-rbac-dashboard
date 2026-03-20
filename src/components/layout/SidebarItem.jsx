@@ -29,7 +29,7 @@ const SidebarItem = ({ item, depth = 0 }) => {
         >
           <div className="flex items-start justify-start gap-3">
             <IconComponent size={18} className="text-zinc-400 transition-colors group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300" strokeWidth={1.5} />
-            <span className='text-start'>{item.description}</span>
+            <span className='text-start'>{item.name}</span>
           </div>
           <div className="text-zinc-400 dark:text-zinc-600 transition-transform duration-200">
             {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -69,7 +69,7 @@ const SidebarItem = ({ item, depth = 0 }) => {
           className="transition-colors text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300" 
           strokeWidth={1.5} 
         />
-        <span>{item.description}</span>
+        <span>{item.name}</span>
       </div>
     </NavLink>
   );

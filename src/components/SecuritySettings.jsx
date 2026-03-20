@@ -23,7 +23,7 @@ export default function SecuritySettings() {
     setMessage('');
 
     try {
-      await API.post('/auth/change-password', {
+      await API.post('/change-password', {
         old_password: form.old_password,
         new_password: form.new_password
       });
